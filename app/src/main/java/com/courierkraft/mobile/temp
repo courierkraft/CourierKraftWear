@@ -1,0 +1,43 @@
+@Override
+	public AmbientModeSupport.AmbientCallback getAmbientCallback() {
+		return new AmbientModeSupport.AmbientCallback() {
+			public void onEnterAmbient(Bundle ambientDetails) {
+				CommonUtils.Echo(TAG, "onEnterAmbient", ambientDetails.toString(), 1);
+				String ambientPref = sharedPrefs.getString("ambient_mode", "none");
+				switch ( ambientPref ) {
+					case "full":
+						// Questionable to stop the data service
+						if ( DataLayerListenerService.isRunning ) {
+							Intent ir = new Intent(getApplicationContext(), DataLayerListenerService.class);
+							getApplicationContext().stopService(ir);
+						}
+						dimmerImage.setAlpha(1f);
+						buttonController.Ambient(true);
+						dimmerImage.setVisibility(View.VISIBLE);
+						break;
+					case "always_on":
+						dimmerImage.setAlpha(0f);
+						break;
+					default: //dim or none
+						// Questionable to stop the data service
+						dimmerImage.setAlpha(0.5f);
+						buttonController.Ambient(true);
+						dimmerImage.setVisibility(View.VISIBLE);
+						break;
+				}
+				CommonUtils.ambience.setAmbientState(true);
+			}
+			public void onExitAmbient(Bundle ambientDetails) {
+				CommonUtils.Echo(TAG, "onExitAmbient", ambientDetails.toString(), 1);
+				if ( ! DataLayerListenerService.isRunning ) {
+					Intent ir = new Intent(getApplicationContext(), DataLayerListenerService.class);
+					getApplicationContext().startService(ir);
+				}
+				//
+				buttonController.Ambient(true);
+				CommonUtils.ambience.setAmbientState(false);
+				buttonController.setButtonsToModeColors();
+				dimmerImage.setVisibility(View.GONE);
+			}
+		};
+	}
